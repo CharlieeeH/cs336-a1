@@ -2,9 +2,8 @@ import os
 from collections import defaultdict, Counter
 import regex as re
 import json
-
-special_tokens = []
-
+from pathlib import Path
+import cProfile
 
 def train_bpe(
     input_path: str, 
@@ -67,7 +66,7 @@ def train_bpe(
         if not stats:
             break
 
-        best_pair = max(stats.items(), key = lambda x: (x[1], x[0]))[0]
+        best_pair = max(stats.items(), key = lambda x: (x[1], x[0]))[0]  # TODO: optimization scheme: heapq + lazy deletion
 
         if stats[best_pair] <= 0:
             break
@@ -128,13 +127,52 @@ def train_bpe(
 
     return vocab, merges
 
+def bytes_to_unicode():
+    bs = (
+    list(range(ord("!"), ord("~") + 1))
+    + list(range(ord("¡"), ord("¬") + 1))
+    + list(range(ord("®"), ord("ÿ") + 1))
+    )
+    cs = bs[:]
+    n = 0
+    for b in range(256):
+        if b not in bs:
+            bs.append(b)
+            cs.append(256+n)
+            n+=1
+    cs = [chr(n) for n in cs]
+    return dict(zip(bs,cs))   
 
-def train_bpe_tinystories():
-    pass
+def save_tokenizer_files(vocab, merges, out_dir):
+    os.makedirs(out_dir,exist_ok=True)
+    byte_encoder = bytes_to_unicode()
+    json_vocab = {
+        k:"".join(byte_encoder[b] for b in v)
+        for k,v in vocab.items()
+    }
+    with open(os.path.join(out_dir,"vocab.json"),"w",encoding="utf-8") as f:
+        json.dump(json_vocab,f,indent=4)
 
+    with open(os.path.join(out_dir,"merges.txt"),"w",encoding="utf-8") as f:
+        for p1,p2 in merges:
+            s1 = "".join(byte_encoder[b] for b in p1)
+            s2 = "".join(byte_encoder[b] for b in p2)
+            f.write(f"{s1} {s2}\n")
 
-def train_bpe_expts_owt():
-    pass
+def main():
+    input_path = "data/TinyStoriesV2-GPT4-train.txt"
+    vocab_size = 10000
+
+    special_tokens = ["<|endoftext|>"]
+    output_dir = "data/TinyStoriesV2-GPT4-train"
+
+    print(f"开始训练 BPE 分词器 （目标词表大小：{vocab_size})...")
+    # the training speed is up to CPU and the efficiency of inverted index
+    vocab, merges = train_bpe(input_path,vocab_size,special_tokens)
+    save_tokenizer_files(vocab,merges,output_dir)
+
+if __name__ == "__main__":
+    main()
 
 
 # class Tokenizer:
