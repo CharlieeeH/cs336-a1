@@ -2,20 +2,10 @@ import torch
 import math
 from torch import nn
 from einops import rearrange
+from cs336_basics import nn_utils
 
 def fn_silu(in_features):
     return in_features*torch.sigmoid(in_features)
-
-
-def fn_softmax(x: torch.Tensor, dim:int = -1)->torch.Tensor:
-    x_max = torch.max(x,dim = dim,keepdim=True).values
-    # for numerical stability
-    x_stable = x-x_max
-
-    exp_x = torch.exp(x_stable)
-    sum_exp = torch.sum(exp_x,dim = dim, keepdim=True)
-    return exp_x/sum_exp
-
 
 def fn_scaled_dot_product_attetion(
         keys: torch.Tensor, 
@@ -32,7 +22,7 @@ def fn_scaled_dot_product_attetion(
 
     if mask is not None:
         scores = scores.masked_fill(~mask, float("-inf"))
-    attention_weights = fn_softmax(scores,dim=-1)
+    attention_weights = nn_utils.fn_softmax(scores,dim=-1)
     return attention_weights @ values
 
 class Embedding(nn.Module):

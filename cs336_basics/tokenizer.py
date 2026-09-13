@@ -74,12 +74,12 @@ class BPETokenizer:
                 byte_parts = new_byte_parts
 
             for part in byte_parts:
-                ids.append(self.byte_to_id(part))
+                ids.append(self.byte_to_id[part])
         return ids
 
 
     def decode(self,ids:list[int]) -> str:
-        byte_segments = [self.id_to_byte(id) for id in ids]
+        byte_segments = [self.id_to_byte[id] for id in ids]
         full_bytes = b"".join(byte_segments)
         return full_bytes.decode("utf-8",errors="replace")
 
