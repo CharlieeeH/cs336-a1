@@ -156,6 +156,18 @@ class SwiGLU(nn.Module):
             torch.empty(d_model,d_ff,device=device,dtype=dtype)
         )
 
+        # torch.empty only allocates storage, so initialize all three matrices
+        # before the first forward pass.
+        std = math.sqrt(2 / (d_model + d_ff))
+        for weight in (self.w1, self.w2, self.w3):
+            nn.init.trunc_normal_(
+                weight,
+                mean=0.0,
+                std=std,
+                a=-3 * std,
+                b=3 * std,
+            )
+
     def forward(self,x:torch.Tensor):
         gate = fn_silu(x@self.w1.T)
         linear_transform = x@self.w3.T

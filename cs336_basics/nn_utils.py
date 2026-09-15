@@ -22,8 +22,8 @@ def cross_entropy(logits: torch.Tensor, targets: torch.Tensor):
     losses = log_normalizer - target_logits
     # for a sequence
     loss = losses.mean()
-    perplexity = torch.exp(loss)
-    return losses.mean(), perplexity
+    # perplexity = torch.exp(loss)
+    return loss
 
 @torch.no_grad()
 def gradient_clipping(
